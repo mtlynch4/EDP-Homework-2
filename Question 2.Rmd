@@ -1,0 +1,90 @@
+---
+title: "Question 2"
+author: "Michael Lynch"
+date: "2/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Load Libraries and Data
+```{r}
+library(tidyverse)
+library(modelr)
+library(broom)
+library(knitr)
+
+
+gdpsim <- read.csv("gdpsim.csv")
+```
+
+# Part 1
+```{r, cache = TRUE}
+growth <- rnorm(150, mean = 2.4, sd = 0.7)
+
+gdpsim <- cbind(gdpsim, growth)
+```
+
+
+# Part 2
+```{r}
+gdpsim <- mutate(gdpsim, GDPpc_2020 = GDPpc_1950 * (1 + (growth/100))^70)
+```
+
+# Part 3
+```{r}
+gdpsim <- mutate(gdpsim, logGDP_1950 = log(GDPpc_1950))
+
+ggplot(gdpsim, mapping = aes(x = logGDP_1950, y = growth)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm') + 
+  labs(x = "Log GDP", y = "Growth Rate (% GDP)", title = "Initial GDP and Average Growth Rate: All Countries")
+
+mod1 <- lm(growth ~ logGDP_1950, 
+              data = gdpsim)
+
+kable(glance(mod1))
+```
+
+I would not conclude that there is any convergence. In fact, the relationship between initial GDP and average growth rate appears to be if anything positive, implying divergence. However, the p-value is extremely high at 0.87, so these results would not seem conclusive. 
+
+
+# Part 4
+```{r}
+gdpsim_med <- filter(gdpsim, GDPpc_2020 > median(GDPpc_2020))
+
+ggplot(gdpsim_med, mapping = aes(x = logGDP_1950, y = growth)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm') + 
+  labs(x = "Log GDP", y = "Growth Rate (% GDP)", title = "Initial GDP and Average Growth Rate: Countries above median current GDP")
+
+mod2 <- lm(growth ~ logGDP_1950, 
+           data = gdpsim_med)
+
+kable(glance(mod2))
+```
+
+Now, the relationship has flipped, and lower initial GDP implies higher growth, and so convergence, although this relationship is weak, with a p-value a little over 0.05. 
+
+# Part 5
+```{r}
+gdpsim_quart <- filter(gdpsim, GDPpc_2020 > quantile(GDPpc_2020, 0.75))
+
+ggplot(gdpsim_quart, mapping = aes(x = logGDP_1950, y = growth)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm') + 
+  labs(x = "Log GDP", y = "Growth Rate (% GDP)", title = "Initial GDP and Average Growth Rate: Countries in top quartile current GDP")
+
+mod3 <- lm(growth ~ logGDP_1950, 
+           data = gdpsim_quart)
+
+kable(glance(mod3))
+```
+
+In this model, the relationship remains positive, although slightly less significant. I would not be confidant in assuming convergence. However, the evidence in favor of convergence has certainly improved from the first model. Moreover, having run the random number generation more than once, restricting the set to the top 25% usually results in statistically significant (p-value < 0.05) results in favor of a negative correlation between initial GDP and growth rate. 
+
+# Part 6
+
+Knowing these numbers are random, it is odd that we find seemingly significant support for convergence in the last model. This occurs because among countries that ended up rich, the ones who started poorer had to have grown faster to catch up and end up in the data set. 

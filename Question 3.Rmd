@@ -1,0 +1,131 @@
+---
+title: "Question 3"
+author: "Michael Lynch"
+date: "2/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Load Libraries and Data
+```{r}
+library(tidyverse)
+library(modelr)
+library(broom)
+library(knitr)
+
+gdpreal <- read.csv("gdpreal.csv")
+```
+
+
+# Part 1
+
+```{r}
+## Tidy data
+gdpreal <- slice(gdpreal, 1:4)
+  
+gdpreal <- gather(gdpreal, 5:64, key = "year", value = "growth")
+
+colnames(gdpreal)[1:2] <- c("aggregate", "aggregate_code")
+
+gdpreal <- select(gdpreal, 1, 5, 6)
+
+gdpreal$year <- substr(gdpreal$year, 2, 5)
+
+gdpreal$year <- as.Date(gdpreal$year, format = "%Y")
+gdpreal$growth <- as.double(gdpreal$growth)
+```
+
+```{r}
+## Plot data
+ggplot(gdpreal, mapping = aes(x = year, y = growth, color = aggregate)) +
+  geom_smooth(se = FALSE) + 
+  labs(x = "Year", y = "Growth Rate (% GDP)", title = "GDP Growth Rate Over Time", color = "Country Aggregates")
+```
+
+
+# Part 2
+
+```{r}
+## Load Data
+
+solow <- read.csv("solow.csv")
+```
+
+```{r}
+## Tidy Data
+solow <- select(solow, -2, -4)
+
+solow <- slice(solow, 1:736)
+
+colnames(solow) <- c("country", "series", "value")
+
+solow <- spread(solow, series, value)
+
+colnames(solow) <- c("country", "sav_net_all", "sav_net", "gdp_pc", "cap_form", "dom_sav", "sav_gdp", "sav_gni", "invest")
+
+solow$sav_net_all <- as.numeric(as.character(solow$sav_net_all))
+solow$sav_net <- as.numeric(as.character(solow$sav_net))
+solow$gdp_pc <- as.numeric(as.character(solow$gdp_pc))
+solow$cap_form <- as.numeric(as.character(solow$cap_form))
+solow$dom_sav <- as.numeric(as.character(solow$dom_sav))
+solow$sav_gdp <- as.numeric(as.character(solow$sav_gdp))
+solow$sav_gni <- as.numeric(as.character(solow$sav_gni))
+solow$invest <- as.numeric(as.character(solow$invest))
+```
+
+```{r}
+## Plot Data
+
+ggplot(solow, mapping = aes(x = sav_gdp, y = invest)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = 'lm', se = FALSE) + 
+  labs(x = "Gross Savings (% GDP)", y = "Net Investment in Nonfinancial Assets (% GDP)", title = "Investment and Savings, World, 2015")
+
+solow_mod_1 <- lm(invest ~ sav_gdp,
+                data = solow)
+
+kable(tidy(solow_mod_1))
+```
+
+
+First, we plot Net Investment in Nonfinancial Assets against Gross Savings, find no significant connection (p = 0.47 > 0.05), and see that what connection there is appears to be negative, contrary to Solow-Swan.
+
+```{r}
+### Oooh. replace investment with Gross Capital Formation and things change 
+
+ggplot(solow, mapping = aes(x = sav_gdp, y = cap_form)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = 'lm', se = FALSE) + 
+  labs(x = "Gross Savings (% GDP)", y = "Gross Capital Formation (% GDP)", title = "Capital Formation and Savings, World, 2015")
+
+solow_mod_2 <- lm(cap_form ~ sav_gdp,
+                data = solow)
+
+kable(tidy(solow_mod_2))
+```
+
+
+Second, we plot Gross Capital Formation against Gross Savings, and find a significant positive connection (p <0.005). This seems to strongly support the Solow-Swan model, with increased savings leading to increased capital formation. It is unclear why this relationship was not found with net investment. One explanation may be that gross savings impacts gross capital formation, but variation in consumption of fixed capital (not counted in gross savings) act as a reduction in savings, and are counted in net investment, making it vary without corresponding changes showing up in gross savings. Another explanation could be that Solow-Swan applies well to the fixed assets that are captured in Capital Formation, but for whatever reason does not work for other kinds of investment. Finally, it may be that savings are not causing increased capital formation, but some third factor is driving both savings and capital formation, but affets net investment less/differently. 
+
+# Part 3
+```{r}
+solow <- mutate(solow, log_gdp_pc = log(gdp_pc))
+
+ggplot(solow, mapping = aes(x = sav_gdp, y = log_gdp_pc)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = 'lm', se = FALSE) + 
+  labs(x = "Gross Savings (% GDP)", y = "Log GDP", title = "Savings and Income, World, 2015")
+
+solow_mod_3 <- lm(sav_gdp ~ log_gdp_pc,
+                data = solow)
+
+kable(tidy(solow_mod_3))
+```
+
+There appears to be a significant (p < 0.05) and positive relationship between income and savings rate. However, it is unclear if this relationship is causal. It is possible a third factor contributes to income and also higher savings rates, or that the causality is reversed, and income causes higher savings, rather than the reverse, as Solow-Swan implies. 
+
+# Part 4
+Overall, there is some tentative support for Solow-Swan in this analysis. Savings and capital formation are connected, as are savings and income. However, in both cases, causality is uncertain. 
