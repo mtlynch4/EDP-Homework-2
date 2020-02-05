@@ -9,18 +9,133 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-# Load Libraries and Data
+# Question 1
+
+See LaTex file.
+
+### Part 2
+
+### Part 3
+
+### Part 4
+
+### Part 5
+
+### Part 6 
+
+### Part 7 
+
+### Part 8 
+
+### Part 9 
+
+### Part 10 
+
+
+
+
+
+# Question 2
+
+### Load Libraries and Data
 ```{r}
 library(tidyverse)
 library(modelr)
 library(broom)
 library(knitr)
 
+
+gdpsim <- read.csv("gdpsim.csv")
+```
+
+### Part 1
+```{r, cache = TRUE}
+growth <- rnorm(150, mean = 2.4, sd = 0.7)
+
+gdpsim <- cbind(gdpsim, growth)
+```
+
+
+### Part 2
+```{r}
+gdpsim <- mutate(gdpsim, GDPpc_2020 = GDPpc_1950 * (1 + (growth/100))^70)
+```
+
+### Part 3
+```{r}
+gdpsim <- mutate(gdpsim, logGDP_1950 = log(GDPpc_1950))
+
+ggplot(gdpsim, mapping = aes(x = logGDP_1950, y = growth)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm') + 
+  labs(x = "Log GDP", y = "Growth Rate (% GDP)", title = "Initial GDP and Average Growth Rate: All Countries")
+
+mod1 <- lm(growth ~ logGDP_1950, 
+              data = gdpsim)
+
+kable(glance(mod1))
+```
+
+I would not conclude that there is any convergence. In fact, the relationship between initial GDP and average growth rate appears to be if anything positive, implying divergence. However, the p-value is extremely high at 0.87, so these results would not seem conclusive. 
+
+
+### Part 4
+```{r}
+gdpsim_med <- filter(gdpsim, GDPpc_2020 > median(GDPpc_2020))
+
+ggplot(gdpsim_med, mapping = aes(x = logGDP_1950, y = growth)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm') + 
+  labs(x = "Log GDP", y = "Growth Rate (% GDP)", title = "Initial GDP and Average Growth Rate: Countries above median current GDP")
+
+mod2 <- lm(growth ~ logGDP_1950, 
+           data = gdpsim_med)
+
+kable(glance(mod2))
+```
+
+Now, the relationship has flipped, and lower initial GDP implies higher growth, and so convergence, although this relationship is weak, with a p-value a little over 0.05. 
+
+### Part 5
+```{r}
+gdpsim_quart <- filter(gdpsim, GDPpc_2020 > quantile(GDPpc_2020, 0.75))
+
+ggplot(gdpsim_quart, mapping = aes(x = logGDP_1950, y = growth)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm') + 
+  labs(x = "Log GDP", y = "Growth Rate (% GDP)", title = "Initial GDP and Average Growth Rate: Countries in top quartile current GDP")
+
+mod3 <- lm(growth ~ logGDP_1950, 
+           data = gdpsim_quart)
+
+kable(glance(mod3))
+```
+
+In this model, the relationship remains positive, although slightly less significant. I would not be confidant in assuming convergence. However, the evidence in favor of convergence has certainly improved from the first model. Moreover, having run the random number generation more than once, restricting the set to the top 25% usually results in statistically significant (p-value < 0.05) results in favor of a negative correlation between initial GDP and growth rate. 
+
+### Part 6
+
+Knowing these numbers are random, it is odd that we find seemingly significant support for convergence in the last model. This occurs because among countries that ended up rich, the ones who started poorer had to have grown faster to catch up and end up in the data set. 
+
+
+
+
+
+# Question 3
+
+### Load Libraries and Data
+```{r}
+library(tidyverse)
+library(modelr)
+library(broom)
+library(knitr)
+
+
 gdpreal <- read.csv("gdpreal.csv")
 ```
 
 
-# Part 1
+### Part 1
 
 ```{r}
 ## Tidy data
@@ -46,7 +161,7 @@ ggplot(gdpreal, mapping = aes(x = year, y = growth, color = aggregate)) +
 ```
 
 
-# Part 2
+### Part 2
 
 ```{r}
 ## Load Data
@@ -110,7 +225,7 @@ kable(tidy(solow_mod_2))
 
 Second, we plot Gross Capital Formation against Gross Savings, and find a significant positive connection (p <0.005). This seems to strongly support the Solow-Swan model, with increased savings leading to increased capital formation. It is unclear why this relationship was not found with net investment. One explanation may be that gross savings impacts gross capital formation, but variation in consumption of fixed capital (not counted in gross savings) act as a reduction in savings, and are counted in net investment, making it vary without corresponding changes showing up in gross savings. Another explanation could be that Solow-Swan applies well to the fixed assets that are captured in Capital Formation, but for whatever reason does not work for other kinds of investment. Finally, it may be that savings are not causing increased capital formation, but some third factor is driving both savings and capital formation, but affets net investment less/differently. 
 
-# Part 3
+### Part 3
 ```{r}
 solow <- mutate(solow, log_gdp_pc = log(gdp_pc))
 
@@ -127,5 +242,19 @@ kable(tidy(solow_mod_3))
 
 There appears to be a significant (p < 0.05) and positive relationship between income and savings rate. However, it is unclear if this relationship is causal. It is possible a third factor contributes to income and also higher savings rates, or that the causality is reversed, and income causes higher savings, rather than the reverse, as Solow-Swan implies. 
 
-# Part 4
+### Part 4
 Overall, there is some tentative support for Solow-Swan in this analysis. Savings and capital formation are connected, as are savings and income. However, in both cases, causality is uncertain. 
+
+
+# Question 4
+
+  A large, one-time increase in agricultural productivity would be expected to have massive impacts on economic development in a two-sector model of development. In such a model, the role of the agricultural sector is solely to provide enough food to sustain the population; any production beyond this point is wasted. The second, industrial, sector provides goods and services to sell to the population, and any increase in production benefits the population. It is also assumed to have higher labor and capital productivity than the agricultural sector. 
+  In this case, if agricultural productivity improves, fewer workers are needed to provide enough food for workers in both sectors, and so more workers are available for the industrial sector. This immediately raises output by increasing the amount of labor allocated to non-food production. It also improves growth by increasing the share of labor working in the high-productivity industrial sector. In Solow-Swan terms, both the increase in agricultural productivity and the shift in allocation to the high-productivity sector increase A, increasing the returns to increased capital accumulation. 
+  This transition may also have affects on technology change, that is the growth of A, through a few mechanisms. First, a transition from the agricultural to industrial sector would normally be accompanied by urbanization. This may improve the rate of technology improvement both by putting more people in contact with each other, increasing the rate of diffusion of new technology, and potentially by increasing access to education. Second, more people working in industry means more capacity for “learning by doing,” and improvements in industrial technology. Third, if this transition to industry is accompanied by an increase in trade, this may also increase the rate of technological diffusion. 
+  Finally, this Green Revolution may work as a “big push” needed to help a country out of a poverty trap of various sorts. In a poverty trap, incomes are so low that returns to that income are not high enough to increase that income. In fact, any small increases in income will depreciate over time. However, in this case the massive increase in agricultural production, and resultant increase in industrial production from labor allocation, may shift national incomes high enough to begin experiencing higher returns and escape the trap. 
+Moreover, the particular mechanism of this “big push” may be especially effective at resolving certain poverty traps. The nutrition trap, where lack of access to sufficient nutrients lowers productivity and so incomes, may be alleviated by the increase in available food driven by the improvement in agricultural production. The savings trap, where it is difficult to save and build wealth/capital at low incomes, might be aided by urbanization moving more people into cities with bank branches, giving them greater access to financial services. 
+
+
+
+
+
