@@ -2,7 +2,7 @@
 title: "Question 3"
 author: "Michael Lynch"
 date: "2/3/2020"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -12,27 +12,6 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 # Question 1
 
 See LaTex file.
-
-### Part 2
-
-### Part 3
-
-### Part 4
-
-### Part 5
-
-### Part 6 
-
-### Part 7 
-
-### Part 8 
-
-### Part 9 
-
-### Part 10 
-
-
-
 
 
 # Question 2
